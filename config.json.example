@@ -1,0 +1,7 @@
+{
+  "email": "your@email.com",
+  "password": "your_password",
+  "discord_webhook": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+  "notify_already_claimed": true,
+  "cron": false
+}

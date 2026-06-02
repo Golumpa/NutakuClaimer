@@ -1,0 +1,17 @@
+[Unit]
+Description=Nutaku Daily Gold Claimer (continuous mode)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_LINUX_USER
+WorkingDirectory=/opt/nutaku-claimer
+ExecStart=/opt/nutaku-claimer/.venv/bin/python claimer.py
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
