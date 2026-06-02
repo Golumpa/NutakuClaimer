@@ -70,6 +70,7 @@ On first run it will log in, save `cookies.json`, and attempt to claim today's r
 | `discord_webhook` | string | Discord webhook URL. Leave empty (`""`) to disable notifications |
 | `notify_already_claimed` | bool | Send a Discord notification when today's reward is already claimed |
 | `cron` | bool | `true` = run once and exit. `false` = stay running and claim each day automatically |
+| `claim_delay_minutes` | int | **Continuous mode only.** Adds a random delay window after the 00:05 UTC reset. E.g. `60` means the claim fires at a random second between 00:05 and 01:05 UTC, chosen fresh each day. Set to `0` to always claim at 00:05. |
 
 ---
 

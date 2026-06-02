@@ -8,6 +8,7 @@ Posts a Discord notification on successful claim.
 
 import json
 import logging
+import random
 import re
 import sys
 import time
@@ -286,12 +287,19 @@ def post_discord(webhook_url: str, reward: dict, calendar: dict, redeem_response
 # Entry point
 # ---------------------------------------------------------------------------
 
-def seconds_until_next_reset(offset_minutes: int = 5) -> float:
-    """Seconds until midnight UTC plus a small offset to let Nutaku's reset settle."""
+def seconds_until_next_claim(delay_minutes: int = 0) -> tuple[float, datetime]:
+    """Return (seconds_to_wait, target_datetime) for the next claim.
+
+    The base reset is 00:05 UTC (5-minute buffer after Nutaku's midnight reset).
+    delay_minutes adds a random window on top: the actual claim time is a
+    uniformly random second within [00:05, 00:05 + delay_minutes].
+    A new random offset is chosen fresh each call (i.e. each day).
+    """
     now = datetime.now(timezone.utc)
-    tomorrow = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    next_reset = tomorrow + timedelta(minutes=offset_minutes)
-    return (next_reset - now).total_seconds()
+    base = (now + timedelta(days=1)).replace(hour=0, minute=5, second=0, microsecond=0)
+    random_extra = random.randint(0, max(0, delay_minutes) * 60)
+    target = base + timedelta(seconds=random_extra)
+    return (target - now).total_seconds(), target
 
 
 def run_once(config: dict, session: requests.Session):
@@ -344,6 +352,8 @@ def main():
         log.info("Done")
         return
 
+    delay_minutes: int = config.get("claim_delay_minutes", 0)
+
     log.info("Running in continuous mode — waiting for daily reset each midnight UTC")
     while True:
         try:
@@ -351,8 +361,7 @@ def main():
         except Exception as e:
             log.error("Error during claim attempt: %s", e)
 
-        wait = seconds_until_next_reset()
-        wake = datetime.now(timezone.utc) + timedelta(seconds=wait)
+        wait, wake = seconds_until_next_claim(delay_minutes)
         h, rem = divmod(int(wait), 3600)
         m, s = divmod(rem, 60)
         log.info("Next attempt at %s UTC (%dh %dm %ds away)", wake.strftime("%Y-%m-%d %H:%M:%S"), h, m, s)
