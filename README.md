@@ -27,7 +27,7 @@ Automatically claims your Nutaku daily rewards and posts a Discord notification 
 **1. Clone and create a virtual environment**
 
 ```bash
-git clone https://github.com/youruser/NutakuClaimer.git
+git clone https://github.com/Golumpa/NutakuClaimer.git
 cd NutakuClaimer
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
