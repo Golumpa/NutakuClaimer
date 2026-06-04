@@ -183,7 +183,14 @@ def get_calendar_details(session: requests.Session, csrf: str) -> dict:
 
 def find_claimable_reward(calendar: dict) -> dict | None:
     for reward in calendar.get("rewards", []):
-        if reward.get("status") == "current":
+        if reward.get("status") == "current-not-claimed":
+            return reward
+    return None
+
+
+def find_already_claimed_reward(calendar: dict) -> dict | None:
+    for reward in calendar.get("rewards", []):
+        if reward.get("status") == "current-claimed":
             return reward
     return None
 
@@ -312,20 +319,16 @@ def run_once(config: dict, session: requests.Session):
     calendar_id = calendar.get("id")
     log.info("Calendar: %s (id=%s)", calendar.get("name"), calendar_id)
 
-    if not calendar.get("isAnyCurrentRewardAvailable", False):
-        log.info("No reward available right now (already claimed today or calendar not active)")
-        if discord_webhook and config.get("notify_already_claimed", False):
-            already_claimed = next(
-                (r for r in calendar.get("rewards", []) if r.get("status") == "current-claimed"),
-                None,
-            )
-            if already_claimed:
-                post_discord_already_claimed(discord_webhook, already_claimed, calendar)
-        return
-
     reward = find_claimable_reward(calendar)
+
     if not reward:
-        log.warning("isAnyCurrentRewardAvailable=true but no 'current' reward found")
+        already_claimed = find_already_claimed_reward(calendar)
+        if already_claimed:
+            log.info("Already claimed today: day %s — %s", already_claimed.get("day"), already_claimed.get("slotTitle"))
+            if discord_webhook and config.get("notify_already_claimed", False):
+                post_discord_already_claimed(discord_webhook, already_claimed, calendar)
+        else:
+            log.info("No claimable reward found (calendar not active or all days complete)")
         return
 
     log.info("Claiming day %s: %s", reward.get("day"), reward.get("slotTitle"))
